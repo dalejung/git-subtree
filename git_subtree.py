@@ -8,8 +8,20 @@ def find_toplevel():
   toplevel = toplevel.strip()
   return toplevel
 
+def require_clean(func):
+  """
+  subtree commands require that the repo have no working changes
+  """
+  fname = func.__name__
+  def _func(self):
+    if self.repo.is_dirty():
+      raise Exception("{fname} needs a clean repo without outstanding working changes".format(fname=fname))
+    return func(self)
+  _func.__name__ = fname
+  return _func
+
 class SubTree(object):
-  def __init__(self, name, prefix, remote_url, branch, remote_alias=None):
+  def __init__(self, name, prefix, remote_url, branch, remote_alias=None, repo=None):
     self.name = name
     self.prefix = prefix
     self.remote_url = remote_url
@@ -17,7 +29,10 @@ class SubTree(object):
       remote_alias = name
     self.remote_alias = remote_alias
     self.branch = branch
-    self.repo = None
+
+    if repo is None:
+      repo = self.default_repo()
+    self.repo = repo
 
   def __repr__(self):
     attrs = ['name', 'prefix', 'remote_url', 'branch']
@@ -27,10 +42,80 @@ class SubTree(object):
     out_format = "SubTree({0})".format(attr_format)
     return out_format.format(**self.__dict__)
 
-  def check_remote(self):
+  def default_repo(self):
+    toplevel = find_toplevel()
+    repo = git.Repo(toplevel)
+    return repo
+
+  @property
+  def remote(self):
     remote = getattr(self.repo.remotes, self.remote_alias, None)
+    return remote
+
+  def check_remote(self):
+    remote = self.remote
     return remote.url == remote_url
 
+  def add_remote(self):
+    remote = self.remote
+    if remote and remote.url != self.remote_url:
+      raise Exception("Remote {remote_alias} exists but has wrong url. \
+          \nCorrect: {remote_url}\nCurrent: {current_url}".format(
+        remote_alias=self.remote_alias, remote_url=self.remote_url, current_url=remote.url))
+
+    if remote:
+      return
+
+    self.repo.create_remote(self.remote_alias, self.remote_url)
+    remote = self.remote
+    assert remote.url == self.remote_url
+
+  @property
+  def toplevel(self):
+    return self.repo.working_dir
+
+  def subtree_command(self, cmd):
+    cmds = []
+    cmds.append("cd {0}".format(self.toplevel))
+    cmds.append(cmd)
+    output = subprocess.check_output("; ".join(cmds), shell=True)
+    return output
+
+  def fetch(self):
+    self.remote.fetch()
+
+  def has_tree(self):
+    tree = self.repo.active_branch.commit.tree
+    try:
+      blob = tree[self.prefix]
+    except KeyError:
+      return False
+    return True
+
+  @require_clean
+  def checkout(self):
+    if self.has_tree():
+      print "already have tree"
+      return
+    self.fetch()
+    cmd = "git subtree add --prefix={prefix} {remote_alias}/{branch} --squash".format(**self.__dict__)
+    return self.subtree_command(cmd)
+
+  @require_clean
+  def pull(self):
+    if not self.has_tree():
+      raise Exception("Must Checkout First")
+
+    cmd = "git subtree pull --prefix={prefix} {remote_alias} {branch} --squash".format(**self.__dict__)
+    return self.subtree_command(cmd)
+
+  @require_clean
+  def push(self):
+    if not self.has_tree():
+      raise Exception("Must Checkout First")
+
+    cmd = "git subtree push --prefix={prefix} {remote_alias} {branch} --squash".format(**self.__dict__)
+    return self.subtree_command(cmd)
 
 if __name__ == '__main__':
 
@@ -40,12 +125,9 @@ if __name__ == '__main__':
   with open(FILE) as f:
     lines = [line.split() for line in f.read().split('\n') if line]
     subtrees = [SubTree(name, prefix, remote_url, branch) for name, prefix, remote_url, branch in lines]
-    for tree in subtrees:
-      tree.repo = repo
-
 
   for tree in subtrees:
-    tree.check_remote()
+    tree.add_remote()
 
   print toplevel
   print subtrees
