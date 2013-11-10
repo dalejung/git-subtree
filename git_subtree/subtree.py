@@ -1,8 +1,6 @@
 import git
 import subprocess
 
-FILE = "/Users/datacaliber/Dropbox/projects/doubleprime/domains/afab/subtrees"
-
 def find_toplevel():
   toplevel = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])
   toplevel = toplevel.strip()
@@ -10,6 +8,7 @@ def find_toplevel():
 
 def require_clean(func):
   """
+  @decorator
   subtree commands require that the repo have no working changes
   """
   fname = func.__name__
@@ -84,13 +83,18 @@ class SubTree(object):
   def fetch(self):
     self.remote.fetch()
 
-  def has_tree(self):
+  @property
+  def tree(self):
     tree = self.repo.active_branch.commit.tree
     try:
-      blob = tree[self.prefix]
+      subtree = tree[self.prefix]
     except KeyError:
-      return False
-    return True
+      subtree = None
+
+    return subtree
+
+  def has_tree(self):
+    return self.tree is not None
 
   @require_clean
   def checkout(self):
@@ -116,18 +120,3 @@ class SubTree(object):
 
     cmd = "git subtree push --prefix={prefix} {remote_alias} {branch} --squash".format(**self.__dict__)
     return self.subtree_command(cmd)
-
-if __name__ == '__main__':
-
-  toplevel = find_toplevel()
-  repo = git.Repo(toplevel)
-
-  with open(FILE) as f:
-    lines = [line.split() for line in f.read().split('\n') if line]
-    subtrees = [SubTree(name, prefix, remote_url, branch) for name, prefix, remote_url, branch in lines]
-
-  for tree in subtrees:
-    tree.add_remote()
-
-  print toplevel
-  print subtrees
