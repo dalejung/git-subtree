@@ -9,24 +9,43 @@ def find_toplevel():
   return toplevel
 
 class SubTree(object):
-  def __init__(self, prefix, remote, branch):
+  def __init__(self, name, prefix, remote_url, branch, remote_alias=None):
+    self.name = name
     self.prefix = prefix
-    self.remote = remote
+    self.remote_url = remote_url
+    if remote_alias is None:
+      remote_alias = name
     self.remote_alias = remote_alias
     self.branch = branch
+    self.repo = None
 
   def __repr__(self):
-    return "SubTree({prefix}, {remote}, {remote_alias}, {branch})".format(**self.__dict__)
+    attrs = ['name', 'prefix', 'remote_url', 'branch']
+    if self.name != self.remote_alias:
+      attrs.append('remote_alias')
+    attr_format = ", ".join(["{k}={{{k}}}".format(k=k) for k in attrs])
+    out_format = "SubTree({0})".format(attr_format)
+    return out_format.format(**self.__dict__)
+
+  def check_remote(self):
+    remote = getattr(self.repo.remotes, self.remote_alias, None)
+    return remote.url == remote_url
+
 
 if __name__ == '__main__':
 
+  toplevel = find_toplevel()
+  repo = git.Repo(toplevel)
+
   with open(FILE) as f:
     lines = [line.split() for line in f.read().split('\n') if line]
-    subtrees = [SubTree(prefix, remote, branch) for prefix, remote, remote_alias, branch in lines]
+    subtrees = [SubTree(name, prefix, remote_url, branch) for name, prefix, remote_url, branch in lines]
+    for tree in subtrees:
+      tree.repo = repo
 
-  toplevel = find_toplevel()
 
-  repo = git.Repo(toplevel)
+  for tree in subtrees:
+    tree.check_remote()
 
   print toplevel
   print subtrees
