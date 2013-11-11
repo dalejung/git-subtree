@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import git_subtree as gs
+import pandas as pd
+
+class STMShell(object):
+    def __init__(self, manager):
+        self.manager = manager
+
+    def subtree_output(self, output):
+        return "\n".join("{k}: {v}".format(k=k, v=v) for k, v in output.items())
+
+    def list(self):
+        columns = ['prefix', 'remote_url', 'branch']
+        rows = []
+        for name, tree in self.manager.list():
+            rows.append([tree.prefix, tree.remote_url, tree.branch])
+
+        df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
+        df.index.name = 'name'
+        print df
+
+    def status(self):
+        rows = []
+        columns = ['has_remote', 'checked_out']
+        for name, tree in self.manager.list():
+            rows.append([tree.check_remote(), tree.has_tree()])
+
+        # really just using it for pretty printing table
+        df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
+        df.index.name = 'name'
+        print df
+
+    def checkout(self):
+        output = self.manager.checkout()
+        print self.subtree_output(output)
+
+    def pull(self):
+        # the git subtree pull output doesn't get returned
+        output = self.manager.pull()
+
+    def push(self):
+        # the git subtree push output doesn't get returned
+        output = self.manager.push()
+
+if __name__ == '__main__':
+    import argparse
+    import os
+    parser = argparse.ArgumentParser(description="Git Subtree Management");
+
+    choices = ['list', 'checkout', 'pull', 'push', 'status']
+    parser.add_argument('action', nargs="?", action="store", default=None, choices=choices)
+
+    args = parser.parse_args()
+
+    action = args.action
+    cwd = os.getcwd()
+
+    if not action:
+        action = 'list'
+
+    treelist = gs.find_treelist(cwd)
+    stm = gs.SubTreeManager(None, treelist)
+    shell = STMShell(stm)
+
+    method = getattr(shell, action)
+    if method:
+        method()
