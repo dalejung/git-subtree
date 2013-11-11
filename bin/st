@@ -43,12 +43,16 @@ class STMShell(object):
         # the git subtree push output doesn't get returned
         output = self.manager.push()
 
+    def add_remote(self):
+        output = self.manager.add_remote()
+        print self.subtree_output(output)
+
 if __name__ == '__main__':
     import argparse
     import os
     parser = argparse.ArgumentParser(description="Git Subtree Management");
 
-    choices = ['list', 'checkout', 'pull', 'push', 'status']
+    choices = ['list', 'checkout', 'pull', 'push', 'status', 'add_remote']
     parser.add_argument('action', nargs="?", action="store", default=None, choices=choices)
 
     args = parser.parse_args()

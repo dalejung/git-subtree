@@ -69,3 +69,10 @@ class SubTreeManager(object):
         for name, tree in self.subtrees.items():
             output[name] = tree.pull()
         return output
+
+    @require_treelist
+    def add_remote(self):
+        output = OrderedDict()
+        for name, tree in self.subtrees.items():
+            output[name] = tree.add_remote()
+        return output

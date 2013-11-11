@@ -52,6 +52,8 @@ class SubTree(object):
 
     def check_remote(self):
         remote = self.remote
+        if remote is None:
+            return False
         return remote.url == self.remote_url
 
     def add_remote(self):
@@ -63,11 +65,12 @@ class SubTree(object):
                         , current_url=remote.url))
 
         if remote:
-            return
+            return "Remote Already Exists"
 
         self.repo.create_remote(self.remote_alias, self.remote_url)
         remote = self.remote
         assert remote.url == self.remote_url
+        return "Remote Added"
 
     @property
     def toplevel(self):
@@ -97,6 +100,9 @@ class SubTree(object):
 
     @require_clean
     def checkout(self):
+        if not self.check_remote():
+            self.add_remote()
+
         if self.has_tree():
             return "{0} already checked out".format(self.prefix)
 
