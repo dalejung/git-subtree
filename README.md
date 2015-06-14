@@ -3,6 +3,7 @@ git-subtree
 
 Python module to help manage git subtreees. 
 
+I require `pandas` because I am a horrible person and am using it only for display output...
 
 Example `subtrees` file localted at repo root.
 
@@ -27,3 +28,7 @@ st checkout
 st pull
 st push
 ```
+
+## TODO
+
+Remove `pandas` requirement
