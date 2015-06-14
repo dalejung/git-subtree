@@ -1,7 +1,7 @@
 import subprocess
 
 import git
-from util import find_toplevel
+from .util import find_toplevel
 
 def require_clean(func):
     """

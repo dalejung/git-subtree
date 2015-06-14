@@ -18,7 +18,7 @@ class STMShell(object):
 
         df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
         df.index.name = 'name'
-        print df
+        print(df)
 
     def status(self):
         rows = []
@@ -29,11 +29,11 @@ class STMShell(object):
         # really just using it for pretty printing table
         df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
         df.index.name = 'name'
-        print df
+        print(df)
 
     def checkout(self):
         output = self.manager.checkout()
-        print self.subtree_output(output)
+        print(self.subtree_output(output))
 
     def pull(self):
         # the git subtree pull output doesn't get returned
@@ -45,7 +45,7 @@ class STMShell(object):
 
     def add_remote(self):
         output = self.manager.add_remote()
-        print self.subtree_output(output)
+        print(self.subtree_output(output))
 
 if __name__ == '__main__':
     import argparse

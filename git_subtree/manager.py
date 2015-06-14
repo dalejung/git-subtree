@@ -8,8 +8,8 @@ import os.path
 import subprocess
 from collections import OrderedDict
 
-from git_subtree.util import find_toplevel
-import git_subtree.subtree as subtree
+from .util import find_toplevel
+from . import subtree
 
 
 class MissingTreelist(Exception):
@@ -35,7 +35,7 @@ def process_treelist(treelist, repo=None):
 def require_treelist(func):
     def _func(self):
         if self.treelist is None:
-            raise MissingTreelist()
+            raise MissingTreelist("Repo is missing subtrees file.")
         return func(self)
     return _func
 
