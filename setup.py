@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 DISTNAME='git_subtree'
-FULLVERSION='0.1'
+FULLVERSION='0.2'
 
 setup(
     name=DISTNAME,
@@ -11,7 +11,7 @@ setup(
         'git_subtree'
     ],
     install_requires=[
-        'pandas>=0.7',
+        'tabulate',
         'gitpython>=1.0'
     ],
 )

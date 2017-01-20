@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import git_subtree as gs
-import pandas as pd
+from tabulate import tabulate
 
 class STMShell(object):
     def __init__(self, manager):
@@ -11,25 +11,22 @@ class STMShell(object):
         return "\n".join("{k}: {v}".format(k=k, v=v) for k, v in output.items())
 
     def list(self):
-        columns = ['prefix', 'remote_url', 'branch']
+        columns = ['name', 'prefix', 'remote_url', 'branch']
         rows = []
         for name, tree in self.manager.list():
-            rows.append([tree.prefix, tree.remote_url, tree.branch])
+            rows.append([name, tree.prefix, tree.remote_url, tree.branch])
 
-        df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
-        df.index.name = 'name'
-        print(df)
+        out = tabulate(rows, headers=columns)
+        print(out)
 
     def status(self):
         rows = []
-        columns = ['has_remote', 'checked_out']
+        columns = ['name', 'has_remote', 'checked_out']
         for name, tree in self.manager.list():
-            rows.append([tree.check_remote(), tree.has_tree()])
+            rows.append([name, tree.check_remote(), tree.has_tree()])
 
-        # really just using it for pretty printing table
-        df = pd.DataFrame(rows, columns=columns, index=self.manager.subtrees.keys())
-        df.index.name = 'name'
-        print(df)
+        out = tabulate(rows, headers=columns)
+        print(out)
 
     def checkout(self):
         output = self.manager.checkout()
